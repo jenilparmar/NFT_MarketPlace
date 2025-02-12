@@ -9,7 +9,7 @@ export async function GET() {
     // Fetch all NFTs from the database
     const nfts = await nftCollection.find().toArray();
 
-    return NextResponse.json({ nfts }, { status: 200 });
+    return NextResponse.json( nfts , { status: 200 });
   } catch (error) {
     console.error("Error fetching NFTs:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

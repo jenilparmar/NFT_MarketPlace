@@ -90,7 +90,7 @@ export default function NFTUploader() {
         const dbResponse = await axios.post("/api/NFT", {
           userMetaMaskId: metaMaskID,
           name: name,
-          price:price,
+          price: price,
           // Send IPFS hash to backend
         });
 
@@ -108,9 +108,15 @@ export default function NFTUploader() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white shadow-lg rounded-2xl p-6 w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
+    <div
+      className="min-h-screen flex items-center justify-center  p-4 w-full"
+      style={{
+        backgroundImage: "url(/bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}>
+      <div className="bg-transparent shadow-lg rounded-2xl p-6 w-full max-w-lg">
+        <h1 className="text-2xl font-bold text-white text-center mb-6">
           Upload Your NFT
         </h1>
 
@@ -127,7 +133,7 @@ export default function NFTUploader() {
           placeholder="NFT Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
         />
 
         <input
@@ -135,7 +141,7 @@ export default function NFTUploader() {
           placeholder="NFT Price (ETH)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
         />
 
         <input
@@ -146,7 +152,7 @@ export default function NFTUploader() {
 
         <button
           onClick={uploadToIPFS}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition duration-300">
+          className="w-full bg-transparent border-2 border-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition duration-300">
           Upload to IPFS
         </button>
       </div>
