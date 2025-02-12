@@ -42,8 +42,12 @@ export default function NFTUploader() {
   const sendToBlockChain = async (userMetaMaskId, imgHash) => {
     try {
       const contract = await getContract();
-      const addNFTContract = await contract.addNFT(userMetaMaskId, imgHash);
-      await addNFTContract.wait(); // Wait for transaction confirmation
+
+      const addNFTContract = await contract.addNFT(imgHash);
+
+      await addNFTContract.wait();
+      console.log("3");
+
       return true;
     } catch (e) {
       console.error("Error in BlockChain --->", e.message);
@@ -79,7 +83,7 @@ export default function NFTUploader() {
       console.log(
         `Uploaded File URL: https://gateway.pinata.cloud/ipfs/${ipfsHash}`
       );
-
+      alert(metaMaskID, ipfsHash);
       const resFromBlockChain = await sendToBlockChain(metaMaskID, ipfsHash);
       if (!resFromBlockChain) {
         alert("Failed to add NFT on blockchain!");
@@ -133,7 +137,7 @@ export default function NFTUploader() {
           placeholder="NFT Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
+          className="w-full p-3 mb-3 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
         />
 
         <input
@@ -141,14 +145,10 @@ export default function NFTUploader() {
           placeholder="NFT Price (ETH)"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          className="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
+          className="w-full p-3 mb-3 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
         />
 
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="w-full mb-3 text-gray-700"
-        />
+       
 
         <button
           onClick={uploadToIPFS}
