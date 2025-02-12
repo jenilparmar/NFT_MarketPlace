@@ -6,12 +6,13 @@ import { provider } from "../../../utils/connectchain";
 import { Contract } from "ethers";
 
 export default function NFTUploader() {
-  const [file, setFile] = useState(null);
-  const [previewURL, setPreviewURL] = useState(null);
   const [metaMaskID, setMetaMaskID] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [imageBase64, setImageBase64] = useState(null);
   const [ipfsHash, setIpfsHash] = useState("");
+
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
   useEffect(() => {
@@ -24,7 +25,6 @@ export default function NFTUploader() {
         console.error("MetaMask Connection Error:", error);
       }
     };
-
     fetchMetaMaskID();
   }, []);
 
@@ -33,21 +33,11 @@ export default function NFTUploader() {
     return new Contract(contractAddress, ABI.abi, signer);
   };
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    setFile(selectedFile);
-    setPreviewURL(URL.createObjectURL(selectedFile));
-  };
-
   const sendToBlockChain = async (userMetaMaskId, imgHash) => {
     try {
       const contract = await getContract();
-
       const addNFTContract = await contract.addNFT(imgHash);
-
       await addNFTContract.wait();
-      console.log("3");
-
       return true;
     } catch (e) {
       console.error("Error in BlockChain --->", e.message);
@@ -55,16 +45,51 @@ export default function NFTUploader() {
     }
   };
 
-  const uploadToIPFS = async () => {
-    if (!file || !name || !price) {
-      alert("Please fill in all fields and select an image!");
+  const generateImage = async () => {
+    if (!prompt) {
+      alert("Please enter a prompt!");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const response = await fetch("/api/GenerateImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+
+      if (data.base64Image) {
+        setImageBase64(`data:image/png;base64,${data.base64Image}`);
+      } else {
+        alert("Failed to generate image.");
+      }
+    } catch (error) {
+      console.error("Error generating image:", error);
+      alert("Error generating image!");
+    }
+  };
+
+  const uploadToIPFS = async () => {
+    if (!imageBase64 || !name || !price) {
+      alert("Please fill in all fields and generate an image!");
+      return;
+    }
 
     try {
+      // Convert Base64 to Blob
+      const byteCharacters = atob(imageBase64.split(",")[1]);
+      const byteArrays = [];
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteArrays.push(byteCharacters.charCodeAt(i));
+      }
+      const byteArray = new Uint8Array(byteArrays);
+      const blob = new Blob([byteArray], { type: "image/png" });
+
+      const formData = new FormData();
+      formData.append("file", blob, "nft.png");
+
       const response = await axios.post(
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
         formData,
@@ -79,32 +104,15 @@ export default function NFTUploader() {
 
       const ipfsHash = response.data.IpfsHash;
       setIpfsHash(ipfsHash);
+      console.log(`Uploaded to IPFS: https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
 
-      console.log(
-        `Uploaded File URL: https://gateway.pinata.cloud/ipfs/${ipfsHash}`
-      );
-      alert(metaMaskID, ipfsHash);
       const resFromBlockChain = await sendToBlockChain(metaMaskID, ipfsHash);
       if (!resFromBlockChain) {
         alert("Failed to add NFT on blockchain!");
         return;
       }
 
-      try {
-        const dbResponse = await axios.post("/api/NFT", {
-          userMetaMaskId: metaMaskID,
-          name: name,
-          price: price,
-          // Send IPFS hash to backend
-        });
-
-        if (dbResponse.status === 201) {
-          alert("NFT successfully uploaded to blockchain and database!");
-        }
-      } catch (dbError) {
-        console.error("Database Save Error:", dbError);
-        alert("NFT added to blockchain but failed to save in database.");
-      }
+      alert("NFT successfully uploaded to IPFS & Blockchain!");
     } catch (error) {
       console.error("Upload Error:", error);
       alert("Upload failed. Check console for details.");
@@ -112,25 +120,27 @@ export default function NFTUploader() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center  p-4 w-full"
-      style={{
-        backgroundImage: "url(/bg.jpg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}>
+    <div className="min-h-screen flex items-center justify-center p-4 w-full"
+      style={{ backgroundImage: "url(/bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
       <div className="bg-transparent shadow-lg rounded-2xl p-6 w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-white text-center mb-6">
-          Upload Your NFT
-        </h1>
-
-        {previewURL && (
-          <img
-            src={previewURL}
-            alt="Preview"
-            className="w-full h-48 object-cover rounded-lg mb-4"
-          />
+        <h1 className="text-2xl font-bold text-white text-center mb-6">Generate and Upload Your NFT</h1>
+        {imageBase64 && (
+          <img src={imageBase64} alt="Generated NFT" className="w-full h-48 object-contain rounded-lg my-4" />
         )}
+
+        <input
+          type="text"
+          placeholder="Enter prompt for AI-generated image"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="w-full p-3 mb-3 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
+        />
+
+        <button
+          onClick={generateImage}
+          className="w-full bg-transparent border-2 border-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition duration-300">
+          Generate Image
+        </button>
 
         <input
           type="text"
@@ -148,12 +158,10 @@ export default function NFTUploader() {
           className="w-full p-3 mb-3 border text-white border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-transparent outline-none"
         />
 
-       
-
         <button
           onClick={uploadToIPFS}
-          className="w-full bg-transparent border-2 border-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition duration-300">
-          Upload to IPFS
+          className="w-full bg-transparent border-2 border-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg transition duration-300">
+          Upload to IPFS & Blockchain
         </button>
       </div>
     </div>

@@ -102,7 +102,7 @@ export default function NFTList() {
               <img
                 src={nft.imageUrl}
                 alt={nft.name}
-                className="w-full h-48 bg-white object-cover rounded-lg"
+                className="w-full h-48  object-contain rounded-lg"
               />
               <p className="mt-3 text-red-500">
                 <span className="font-semibold">Name:</span> {nft.name}
