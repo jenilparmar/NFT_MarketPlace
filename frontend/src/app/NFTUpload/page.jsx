@@ -104,15 +104,30 @@ export default function NFTUploader() {
 
       const ipfsHash = response.data.IpfsHash;
       setIpfsHash(ipfsHash);
-      console.log(`Uploaded to IPFS: https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+      console.log(
+        `Uploaded to IPFS: https://gateway.pinata.cloud/ipfs/${ipfsHash}`
+      );
 
       const resFromBlockChain = await sendToBlockChain(metaMaskID, ipfsHash);
       if (!resFromBlockChain) {
         alert("Failed to add NFT on blockchain!");
         return;
       }
+      try {
+        const dbResponse = await axios.post("/api/NFT", {
+          userMetaMaskId: metaMaskID,
+          name: name,
+          price: price,
+          // Send IPFS hash to backend
+        });
 
-      alert("NFT successfully uploaded to IPFS & Blockchain!");
+        if (dbResponse.status === 201) {
+          alert("NFT successfully uploaded to blockchain and database!");
+        }
+      } catch (dbError) {
+        console.error("Database Save Error:", dbError);
+        alert("NFT added to blockchain but failed to save in database.");
+      }
     } catch (error) {
       console.error("Upload Error:", error);
       alert("Upload failed. Check console for details.");
@@ -120,12 +135,23 @@ export default function NFTUploader() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 w-full"
-      style={{ backgroundImage: "url(/bg.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
+    <div
+      className="min-h-screen flex items-center justify-center p-4 w-full"
+      style={{
+        backgroundImage: "url(/bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}>
       <div className="bg-transparent shadow-lg rounded-2xl p-6 w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-white text-center mb-6">Generate and Upload Your NFT</h1>
+        <h1 className="text-2xl font-bold text-white text-center mb-6">
+          Generate and Upload Your NFT
+        </h1>
         {imageBase64 && (
-          <img src={imageBase64} alt="Generated NFT" className="w-full h-48 object-contain rounded-lg my-4" />
+          <img
+            src={imageBase64}
+            alt="Generated NFT"
+            className="w-full h-48 object-contain rounded-lg my-4"
+          />
         )}
 
         <input
